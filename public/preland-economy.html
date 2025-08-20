@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Как экономить на покупках — простой лайфхак</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#0f172a;color:#e2e8f0}
+    .wrap{max-width:780px;margin:0 auto;padding:24px}
+    .card{background:#111827;border:1px solid #1f2937;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+    h1{margin:0 0 12px;font-size:28px}
+    p{line-height:1.6}
+    .hero{height:160px;border-radius:12px;margin:12px 0 18px;background:
+      radial-gradient(1000px 300px at 10% -40%, #22d3ee55,transparent 60%),
+      radial-gradient(800px 300px at 90% -60%, #a78bfa55,transparent 60%),
+      #0b1220;}
+    ul{margin:0 0 16px 18px}
+    .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .btn{display:inline-block;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:600}
+    .btn-primary{background:#22d3ee;color:#0b1220}
+    .btn-ghost{border:1px solid #374151;color:#e5e7eb}
+    small{opacity:.7}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="hero"></div>
+    <h1>Экономь на каждую покупку</h1>
+    <p>Собрали для тебя быстрый способ получать кешбэк на регулярные покупки. Никаких сложных условий — просто переходи и активируй выгоду.</p>
+    <ul>
+      <li>Кешбэк на популярные магазины</li>
+      <li>Промо и акции недели в одном месте</li>
+      <li>Займёт не больше 30 секунд</li>
+    </ul>
+
+    <!-- КНОПКИ -->
+    <div class="btns">
+      <!-- ПРОД: ведёт на наш /click без dry -->
+      <a class="btn btn-primary"
+         href="/click?offer_id=admitad_demo&target=https%3A%2F%2Fmerchant.ru%2Fpromo">
+         Получить кешбэк →
+      </a>
+
+      <!-- ТЕСТ: показывает JSON с click_id (не уводит на оффер) -->
+      <a class="btn btn-ghost"
+         href="/click?offer_id=admitad_demo&target=https%3A%2F%2Fmerchant.ru%2Fpromo&dry=1">
+         Тест без перехода
+      </a>
+    </div>
+    <p><small>Нажимая кнопку, ты переходишь на партнёрскую ссылку.</small></p>
+  </div>
+</div>
+</body>
+</html>
