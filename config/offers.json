@@ -1,0 +1,12 @@
+{
+  "admitad_demo": {
+    "network": "admitad",
+    "base_deeplink": "https://ad.admitad.com/g/XXXXXXXX/?ulp={target}",
+    "requiresTarget": true
+  },
+  "cityads_demo": {
+    "network": "cityads",
+    "base_deeplink": "https://cityadspix.com/click-YYYYYYYY-?url={target}",
+    "requiresTarget": true
+  }
+}
