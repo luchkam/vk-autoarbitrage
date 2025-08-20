@@ -17,6 +17,15 @@ const __dirname = path.dirname(__filename);
 // Статика для будущих прелендов (картинки/HTML)
 app.use('/static', express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+  res.type('html').send(`
+<!doctype html><html><head>
+<meta name="verify-admitad" content="9f4abf99af" />
+<meta charset="utf-8">
+<title>OK</title>
+</head><body>OK</body></html>`);
+});
+
 // Трекинг: /click и /postback
 app.use('/', trackingRouter);
 
