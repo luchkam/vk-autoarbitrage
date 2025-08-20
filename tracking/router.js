@@ -1,7 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { saveClick, findClick, saveConversion } from './storage.js';
-import offers from '../config/offers.json' assert { type: 'json' };
+import offers from '../config/offers.json' with { type: 'json' };
 import * as admitad from '../adapters/admitad.js';
 import * as cityads from '../adapters/cityads.js';
 import { sendAlert } from '../alerts/telegram.js';
