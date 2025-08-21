@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import trackingRouter from './tracking/router.js';
+import cronVkRouter from './cron/vk.js';
 import cookieParser from 'cookie-parser';
 import vkOauthRouter from './oauth/vk.js';
 
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 
 // Трекинг: /click и /postback
 app.use('/', trackingRouter);
+app.use('/', cronVkRouter);
 app.use('/', vkOauthRouter);
 
 app.get('/health', (req, res) => {
