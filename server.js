@@ -4,12 +4,15 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import trackingRouter from './tracking/router.js';
+import cookieParser from 'cookie-parser';
+import vkOauthRouter from './oauth/vk.js';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(cookieParser());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +31,7 @@ app.get('/', (req, res) => {
 
 // Трекинг: /click и /postback
 app.use('/', trackingRouter);
+app.use('/', vkOauthRouter);
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
