@@ -18,34 +18,34 @@ function b64url(input) {
     .replace(/=+$/g, '');
 }
 
-// === Шаг 1: Старт авторизации (PKCE) ===
+// === Шаг 1. Старт авторизации (PKCE) ===
 router.get('/oauth/vk/login', (req, res) => {
   try {
     const guard = req.query.key || '';
     if (guard !== need('OAUTH_SETUP_SECRET')) return res.status(403).send('forbidden');
 
-    const clientId = need('VK_APP_ID');
+    const clientId    = need('VK_APP_ID');
     const redirectUri = need('VK_REDIRECT_URI');
 
     const codeVerifier = b64url(crypto.randomBytes(32));
-    const challenge = b64url(crypto.createHash('sha256').update(codeVerifier).digest());
-    const state = b64url(crypto.randomBytes(16));
+    const challenge    = b64url(crypto.createHash('sha256').update(codeVerifier).digest());
+    const state        = b64url(crypto.randomBytes(16));
 
-    // PKCE + CSRF
+    // PKCE + anti-CSRF
     res.cookie('vk_pkce_verifier', codeVerifier, { httpOnly: true, maxAge: 10 * 60 * 1000, sameSite: 'lax' });
-    res.cookie('vk_pkce_state', state, { httpOnly: true, maxAge: 10 * 60 * 1000, sameSite: 'lax' });
+    res.cookie('vk_pkce_state',    state,        { httpOnly: true, maxAge: 10 * 60 * 1000, sameSite: 'lax' });
 
     const params = new URLSearchParams({
       client_id: clientId,
       response_type: 'code',
-      scope: 'ads',
+      scope: 'ads',                 // токен с доступом к Ads API
       redirect_uri: redirectUri,
       state,
       code_challenge: challenge,
       code_challenge_method: 'S256',
     });
 
-    // OAuth 2.1 авторизация VK ID
+    // Авторизация OAuth VK ID
     const authUrl = `https://id.vk.com/authorize?${params}`;
     return res.redirect(authUrl);
   } catch (e) {
@@ -54,108 +54,76 @@ router.get('/oauth/vk/login', (req, res) => {
   }
 });
 
-// Вспомогательная: POST x-www-form-urlencoded и вернуть {ok, json, text, status}
-async function postForm(url, form) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json',
-      'User-Agent': 'vk-autoarbitrage/1.0',
-    },
-    body: form
-  });
-  const text = await r.text();
-  let json = null;
-  try { json = JSON.parse(text); } catch { /* может прийти HTML, оставим text */ }
-  return { ok: r.ok, status: r.status, json, text };
-}
-
-// === Шаг 2: Приём code и обмен на токены ===
+// === Шаг 2. Колбэк: обмен code (+device_id!) на токены ===
 router.get('/oauth/vk/callback', async (req, res) => {
   try {
-    const clientId = need('VK_APP_ID');
-    const clientSecret = need('VK_APP_SECRET'); // для Web разрешён
-    const redirectUri = need('VK_REDIRECT_URI');
+    const clientId     = need('VK_APP_ID');
+    const clientSecret = need('VK_APP_SECRET');   // для web-приложений допустим
+    const redirectUri  = need('VK_REDIRECT_URI');
 
-    const { code = '', state = '' } = req.query;
-    const cookieState = req.cookies?.vk_pkce_state || '';
-    const codeVerifier = req.cookies?.vk_pkce_verifier || '';
+    const { code = '', state = '', device_id = '' } = req.query;
+    const cookieState    = req.cookies?.vk_pkce_state || '';
+    const codeVerifier   = req.cookies?.vk_pkce_verifier || '';
 
-    if (!code || !state || !codeVerifier || state !== cookieState) {
+    if (!code || !state || state !== cookieState || !codeVerifier) {
       return res.status(400).send('Invalid state or code');
     }
 
-    // Готовим форму для VK ID (OAuth 2.1)
-    const baseForm = new URLSearchParams({
+    // ВАЖНО: device_id должен прийти из колбэка и уйти в обмен
+    if (!device_id) {
+      return res.status(400).send('Missing device_id from VK callback');
+    }
+
+    const form = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: clientId,
-      client_secret: clientSecret,
+      client_secret: clientSecret,     // если получите invalid_client — временно уберите эту строку
       redirect_uri: redirectUri,
       code: String(code),
       code_verifier: codeVerifier,
+      device_id: String(device_id),
     });
 
-    // 1) Основной endpoint VK ID
-    const PRIMARY_TOKEN_URL = 'https://id.vk.com/oauth2/auth';
-    let resp = await postForm(PRIMARY_TOKEN_URL, baseForm);
+    // Правильный токен-эндпоинт VK ID OAuth 2.1
+    const r = await fetch('https://id.vk.com/oauth2/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: form
+    });
 
-    // Если не ок/нет JSON/нет access_token — пробуем «наследный» endpoint
-    if (!resp.ok || !resp.json || (!resp.json.access_token && !resp.json.token)) {
-      console.warn('Primary token endpoint failed:', resp.status, (resp.text || '').slice(0, 300));
+    const text = await r.text();
+    let j; try { j = JSON.parse(text); } catch { j = null; }
 
-      const LEGACY_TOKEN_URL = 'https://oauth.vk.com/access_token';
-      const legacyForm = new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        code: String(code),
-        // code_verifier старый endpoint может игнорировать — оставляем только базовые поля
-      });
-
-      resp = await postForm(LEGACY_TOKEN_URL, legacyForm);
+    if (!r.ok) {
+      return res.status(400).send(
+        `VK token endpoint error: HTTP ${r.status} Body (first 1000 chars): ${text.slice(0,1000)}`
+      );
+    }
+    if (!j || (j.error && !j.access_token)) {
+      return res.status(400).send(
+        `VK error: ${j?.error_description || j?.error || 'unknown'}\nRaw:\n${text.slice(0,1000)}`
+      );
     }
 
-    // Итоговая проверка
-    if (!resp.ok || !resp.json) {
-      return res
-        .status(400)
-        .send(
-          `VK token endpoint error:
-HTTP ${resp.status}
-Body (first 1000 chars):
-${(resp.text || '').slice(0, 1000)}`
-        );
-    }
-
-    const j = resp.json;
-    const accessToken = j.access_token || j.token; // вдруг поле называется иначе
-    if (!accessToken) {
-      return res
-        .status(400)
-        .send(
-          `VK error: no access_token in response
-Raw (first 1000):
-${(resp.text || '').slice(0, 1000)}`
-        );
-    }
-
-    // Убираем PKCE-куки
+    // Чистим PKCE-куки
     res.clearCookie('vk_pkce_verifier');
     res.clearCookie('vk_pkce_state');
 
-    // Выводим пользователю что скопировать
-    const html = `
-<pre style="font-size:14px;line-height:1.4;white-space:pre-wrap;">
-VK_ACCESS_TOKEN = ${accessToken}
+    // Показываем, что положить в Render
+    return res.status(200).send(
+`<pre style="font-size:14px;line-height:1.4;white-space:pre-wrap;">
+VK_ACCESS_TOKEN = ${j.access_token}
 VK_REFRESH_TOKEN = ${j.refresh_token || '(нет в ответе)'}
 EXPIRES_IN      = ${j.expires_in || 'unknown'} сек
 
-Скопируй VK_ACCESS_TOKEN и (если есть) VK_REFRESH_TOKEN в Render → Environment.
-Для проверки вызови:
+Скопируй VK_ACCESS_TOKEN (и при наличии VK_REFRESH_TOKEN) в Render → Environment.
+Для теста запросов к Ads API можно дернуть:
 /cron/pull-vk?key=ТВОЙ_CRON_SECRET
-</pre>`;
-    return res.status(200).send(html);
+</pre>`
+    );
   } catch (e) {
     console.error(e);
     return res.status(500).send(e.message);
