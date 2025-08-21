@@ -4,9 +4,9 @@
     "variants": [
       { "id": "sales",    "target": "https://aptekiplus.ru/moskva/sales/" },
       { "id": "vitamins", "target": "https://aptekiplus.ru/moskva/catalog/vitaminy-i-bady/" },
-      { "id": "ucenka",     "target": "https://aptekiplus.ru/moskva/ucenka/" }
-      { "id": "loyalti",     "target": "https://aptekiplus.ru/moskva/loyalty/" }
-      { "id": "deti",     "target": "https://aptekiplus.ru/moskva/catalog/tovary-dlia-detei/" }    
+      { "id": "ucenka",   "target": "https://aptekiplus.ru/moskva/ucenka/" },
+      { "id": "loyalty",  "target": "https://aptekiplus.ru/moskva/loyalty/" },
+      { "id": "kids",     "target": "https://aptekiplus.ru/moskva/catalog/tovary-dlia-detei/" }
     ]
   }
 }
