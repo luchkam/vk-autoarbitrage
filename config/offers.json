@@ -6,12 +6,12 @@
   },
   "admitad_apteki": {
     "network": "admitad",
-    "base_deeplink": "https://tsygg.com/g/2m4nkfyzhp9f4abf99aff724164c66/?erid=2bL9aMPo2e49hMef4pgVRznDVL&ulp=https%3A%2F%2Faptekiplus.ru",
+    "base_deeplink": "https://tsygg.com/g/2m4nkfyzhp9f4abf99aff724164c66/?erid=2bL9aMPo2e49hMef4pgVRznDVL&ulp={target}",
     "requiresTarget": true
   },
   "auto_apteki": {
     "network": "admitad",
-    "base_deeplink": "https://tsygg.com/g/2m4nkfyzhp9f4abf99aff724164c66/?erid=2bL9aMPo2e49hMef4pgVRznDVL&ulp=https%3A%2F%2Faptekiplus.ru",
+    "base_deeplink": "https://tsygg.com/g/2m4nkfyzhp9f4abf99aff724164c66/?erid=2bL9aMPo2e49hMef4pgVRznDVL&ulp={target}",
     "requiresTarget": true
   },
   "admitad_demo": {
